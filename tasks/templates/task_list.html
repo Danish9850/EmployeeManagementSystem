@@ -1,0 +1,167 @@
+<html>
+    <head>
+        <title>Tasl List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    </head>
+
+    <style>
+        body{
+    font-family:'Poppins',sans-serif;
+    background:linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
+    min-height:100vh;
+}
+
+.dashboard-card{
+    background:rgba(255,255,255,.15);
+    backdrop-filter:blur(18px);
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.2);
+    padding:25px;
+    color:white;
+    box-shadow:0 15px 35px rgba(0,0,0,.25);
+    transition:.35s;
+}
+
+.dashboard-card:hover{
+    transform:translateY(-8px);
+}
+
+.blue-card{
+    background:linear-gradient(135deg,#2563eb,#60a5fa);
+}
+
+.green-card{
+    background:linear-gradient(135deg,#059669,#34d399);
+}
+
+.red-card{
+    background:linear-gradient(135deg,#dc2626,#fb7185);
+}
+    </style>
+
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold fs-3" href="#">
+                    <i class="bi bi-list-check"></i>
+                    Task Management
+                </a>
+                
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-outline-light me-3 position-relative">
+                        <i class="bi bi-bell-fill"></i>
+
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            3
+                        </span>
+                    </button>
+
+                    <span class="text-white fw-semibold me-3">
+                        Welcome,👤{{ request.user.username }}
+                    </span>
+
+                    <a href="{% url 'logout' %}" class="btn btn-danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-4">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="dashboard-card blue-card">
+                        <h6>Total Tasks</h6>
+                        <h2>{{ total_tasks }}</h2>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <div class="dashboard-card green-card">
+                        <h6>Completed</h6>
+                        <h2>{{ completed }}</h2>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                   <div class="dashboard-card blue-card">
+                    <h6>Pending</h6>
+                    <h2>{{ pending }}</h2>
+                   </div>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                   <div class="dashboard-card red-card">
+                    <h6>In Progress</h6>
+                    <h2>{{ in_progress }}</h2>
+                   </div>
+                </div>
+            </div>
+        </div>
+        
+        <form method="GET" class="mb-4">
+            <div class="d-flex gap-3">
+                <input type="text" name="search" 
+                value="{{ request.GET.search }}"
+                class="form-control" 
+                placeholder="🔍Search Employee">
+
+                <button class="btn btn-primary">
+                    Search
+                </button>
+
+                <a href="{% url 'add_task' %}" class="btn btn-success">
+                    Add Task
+                </a>
+            </div>
+        </form>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-bordered w-100 align-middle">
+                <thead class="text-center">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Title</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for task in tasks %}
+
+                    <tr class="text-center">
+                        <td>{{ task.employee.name }}</td>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.priority }}</td>
+                        <td>{{ task.status }}</td>
+                        <td>
+                            <a href="{% url 'view_task' task.id %}" class="btn btn-primary btn-sm">
+                                View
+                            </a>
+
+                            <a href="{% url 'edit_task' task.id %}" class="btn btn-warning btn-sm">
+                                Edit
+                            </a>
+
+                            <a href="{% url 'delete_task' task.id %}" class="btn btn-danger btn-sm">
+                                Delete
+                            </a>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            No Task Found
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </body>
+</html>
