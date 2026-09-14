@@ -10,15 +10,28 @@ from django.contrib.auth import update_session_auth_hash
 # Create your views here.
 @login_required
 def profile(request):
+    user_employees = Employee.objects.filter(
+        user=request.user
+    )
+
+    user_leaves = Leave.objects.filter(
+        employee__user=request.user
+    )
+
+    user_tasks = Task.objects.filter(
+        employee__user=request.user
+    )
 
     context = {
         "total_employees":
-        Employee.objects.count(),
-        "total_leaves":Leave.objects.count(),
-        "total_tasks":Task.objects.count(),
+        user_employees.count(),
+        "total_leaves":user_leaves.count(),
+        "total_tasks":user_tasks.count(),
     }
 
     return render(request, "profile.html", context)
+
+@login_required
 def edit_profile(request):
     user = request.user
     if request.method == "POST":
@@ -32,6 +45,7 @@ def edit_profile(request):
         return redirect("profile")
     return render(request, "edit_profile.html")
 
+@login_required
 def change_password(request):
 
     if request.method == "POST":

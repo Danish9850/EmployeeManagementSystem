@@ -8,15 +8,23 @@ from django.core.paginator import Paginator
 
 @login_required
 def apply_leave(request):
-    employees = Employee.objects.all()
+    employees = Employee.objects.filter(
+        user=request.user
+    )
+
     if request.method == "POST":
+
         employee_id = request.POST.get("employee")
         leave_type = request.POST.get("leave_type")
         start_date = request.POST.get("start_date")
         end_date = request.POST.get("end_date")
         reason = request.POST.get("reason")
 
-        employee = Employee.objects.get(id=employee_id)
+        employee = get_object_or_404(
+            Employee,
+            id=employee_id,
+            user=request.user
+        )
 
         Leave.objects.create(
             employee=employee,
@@ -27,61 +35,99 @@ def apply_leave(request):
             status="Pending"
         )
 
-        messages.success(request,"Leave Applied Successfully.")
+        messages.success(
+            request,
+            "Leave Applied Successfully."
+        )
+
         return redirect("leave_list")
 
     context = {
-        "employees":employees,
-        "total_employees":employees.count(),
+        "employees": employees,
+        "total_employees": employees.count(),
     }
 
-    return render(request,"apply_leave.html", context)
+    return render(
+        request,
+        "apply_leave.html",
+        context
+    )
 
 @login_required
 def leave_list(request):
-    search = request.GET.get("search")
+    leaves = Leave.objects.select_related("employee").filter(
+        employee__user=request.user
+    )
 
-    leaves = Leave.objects.select_related("employee").all()
+    search = request.GET.get("search", "")
 
     if search:
-        leaves = leaves.filter(employee__name__icontains=search)
-
-    # Pagination hamesha chalegi
+        leaves = leaves.filter(
+            employee__name__icontains=search
+        )
     paginator = Paginator(leaves, 5)
+
     page = request.GET.get("page")
+
     leaves = paginator.get_page(page)
+    user_leaves = Leave.objects.filter(
+        employee__user=request.user
+    )
+
+    total_leaves = user_leaves.count()
+
+    approved = user_leaves.filter(
+        status="Approved"
+    ).count()
+
+    pending = user_leaves.filter(
+        status="Pending"
+    ).count()
+
+    rejected = user_leaves.filter(
+        status="Rejected"
+    ).count()
 
     context = {
         "leaves": leaves,
-        "total_leaves": Leave.objects.count(),
-        "approved": Leave.objects.filter(status="Approved").count(),
-        "pending": Leave.objects.filter(status="Pending").count(),
-        "rejected": Leave.objects.filter(status="Rejected").count(),
+        "total_leaves": total_leaves,
+        "approved": approved,
+        "pending": pending,
+        "rejected": rejected,
     }
 
-    return render(request, "leave_list.html", context)
-
+    return render(
+        request,
+        "leave_list.html",
+        context
+    )
 @login_required
 def leave_detail(request, id):
-    leave = Leave.objects.get(id=id)
+    leave = get_object_or_404(Leave,id=id,employee__user=request.user)
 
     context = {
         "leave":leave
     }
-
     return render(request,"leave_detail.html", context)
 
 @login_required
 def approve_leave(request, leave_id):
-    leave = get_object_or_404(Leave, id=leave_id)
+    leave = get_object_or_404(
+        Leave,
+        id=leave_id,
+        employee__user=request.user
+    )
     leave.status = "Approved"
     leave.save()
-    messages.success(request, "Leave Approved Successfully.")
+    messages.success(
+        request,
+        "Leave Approved Successfully."
+    )
     return redirect("leave_list")
 
 @login_required
 def reject_leave(request, leave_id):
-    leave = get_object_or_404(Leave, id=leave_id)
+    leave = get_object_or_404(Leave, id=leave_id,employee__user=request.user)
     leave.status = "Rejected"
     leave.save()
     messages.success(request, "Leave Rejected Successfully.")
@@ -89,26 +135,45 @@ def reject_leave(request, leave_id):
 
 @login_required
 def edit_leave(request, id):
-    leave = get_object_or_404(Leave, id=id)
-    employees = Employee.objects.all()
+    leave = get_object_or_404(
+        Leave,
+        id=id,
+        employee__user=request.user
+    )
+    employees = Employee.objects.filter(
+        user=request.user
+    )
+
     if request.method == "POST":
-        leave.employee_id = request.POST.get("employee")
+        employee = get_object_or_404(
+            Employee,
+            id=request.POST.get("employee"),
+            user=request.user
+        )
+
+        leave.employee = employee
         leave.leave_type = request.POST.get("leave_type")
         leave.start_date = request.POST.get("start_date")
         leave.end_date = request.POST.get("end_date")
         leave.reason = request.POST.get("reason")
+
         leave.save()
+
         messages.success(
-            request,"Leave Updated Successfully."
+            request,
+            "Leave Updated Successfully."
         )
 
         return redirect("leave_list")
 
     context = {
-        "leave":leave,
-        "employees": Employee.objects.all(),
-        "total_employees":Employee.objects.count(),
+        "leave": leave,
+        "employees": employees,
+        "total_employees": employees.count(),
     }
 
-    return render(request, "edit_leave.html", context)
-
+    return render(
+        request,
+        "edit_leave.html",
+        context
+    )
